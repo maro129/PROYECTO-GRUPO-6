@@ -48,14 +48,52 @@ from gamification_service import GamificationService
 from course_service import CourseService
 import json
 import os
+from services.activity_service import ActivityService
+from services.badge_service import BadgeService
+from models.user import User
+from functools import wraps
+
+# ✅ IMPORTACIONES NUEVAS - con manejo de errores para compatibilidad
+try:
+    from database.db import db, init_db
+    from config import Config
+    DB_AVAILABLE = True
+    print("✅ Módulos de base de datos cargados correctamente")
+except ImportError as e:
+    print(f"🔧 Modo JSON - Base de datos no disponible: {e}")
+    DB_AVAILABLE = False
 
 app = Flask(__name__)
 CORS(app)
+
+# ✅ INICIALIZAR BASE DE DATOS SOLO SI ESTÁ DISPONIBLE
+if DB_AVAILABLE:
+    try:
+        app.config.from_object(Config)
+        init_db(app)
+        print("✅ Base de datos PostgreSQL inicializada")
+    except Exception as e:
+        print(f"❌ Error inicializando base de datos: {e}")
+        DB_AVAILABLE = False
+else:
+    print("🔧 Ejecutando en modo JSON")
 
 # Inicializar servicios
 auth_service = AuthService()
 gamification_service = GamificationService()
 course_service = CourseService()
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        user_data = auth_service.verify_token(token)
+        
+        if not user_data:
+            return jsonify({'error': 'Token inválido'}), 401
+            
+        return f(user_data, *args, **kwargs)
+    return decorated
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
@@ -135,6 +173,50 @@ def get_achievements():
             
         achievements = gamification_service.get_user_achievements(user_data['email'])
         return jsonify(achievements)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/user/complete-activity', methods=['POST'])
+@token_required
+def complete_activity(current_user):
+    try:
+        data = request.get_json()
+        activity_type = data.get('type', 'lesson_completed')
+        lesson_id = data.get('lesson_id')
+        difficulty = data.get('difficulty', 1)
+        
+        # Obtener user_id del email
+        user = User.query.filter_by(email=current_user['email']).first()
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        result = ActivityService.record_activity(
+            user.id, activity_type, lesson_id, difficulty
+        )
+        
+        # Verificar badges
+        new_badges = BadgeService.check_and_award_badges(user.id)
+        
+        return jsonify({
+            'success': True,
+            'activity_result': result,
+            'new_badges': new_badges
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/user/badges', methods=['GET'])
+@token_required
+def get_user_badges(current_user):
+    try:
+        user = User.query.filter_by(email=current_user['email']).first()
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        badges = BadgeService.get_user_badges(user.id)
+        return jsonify({'badges': badges})
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 

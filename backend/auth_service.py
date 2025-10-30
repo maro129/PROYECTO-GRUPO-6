@@ -100,6 +100,11 @@ class AuthService:
         }
     
     def verify_token(self, token):
+        # TEMPORAL - Permitir token de prueba para desarrollo
+        if token == "token-test@ejemplo.com":
+            print("🔓 Token de prueba aceptado para desarrollo")
+            return {'email': 'test@ejemplo.com'}
+        
         try:
             # Simulación simple de verificación de token
             if token.startswith('token-'):
