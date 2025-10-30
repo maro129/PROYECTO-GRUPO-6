@@ -1,5 +1,52 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+#CONEXION CON POSTGRESQL Y CREACION DE ARCHIVOS activity y badge
+
+# 1. Importación necesaria
+from flask_sqlalchemy import SQLAlchemy
+
+# --- CONFIGURACIÓN DE LA APP Y LA BASE DE DATOS ---
+app = Flask(__name__)
+
+# 2. Definir la URI de la BD
+# Formato: postgresql://<user>:<password>@<host>:<port>/<database_name>
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://<user>:<password>@<host>:5432/<database_name>'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# 3. Inicializar SQLAlchemy
+db = SQLAlchemy(app)
+
+# Modelos para SQLAlchemy (Tablas de la Base de Datos)
+
+# Tabla para registrar las acciones de los usuarios
+class Activity(db.Model):
+    __tablename__ = 'activity'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    type = db.Column(db.String(80), nullable=False)
+    points_awarded = db.Column(db.Integer, default=0)
+    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+# Tabla para definir las insignias
+class Badge(db.Model):
+    __tablename__ = 'badge'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    description = db.Column(db.String(255))
+    required_activities = db.Column(db.Integer, default=1)
+
+# Tabla para rastrear qué insignias ha ganado cada usuario
+class UserBadge(db.Model):
+    __tablename__ = 'user_badge'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    badge_id = db.Column(db.Integer, db.ForeignKey('badge.id'), nullable=False)
+    awarded_date = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    # Evita que un usuario obtenga la misma insignia dos veces
+    __table_args__ = (db.UniqueConstraint('user_id', 'badge_id', name='_user_badge_uc'),)
+
+
 from auth_service import AuthService
 from gamification_service import GamificationService
 from course_service import CourseService
