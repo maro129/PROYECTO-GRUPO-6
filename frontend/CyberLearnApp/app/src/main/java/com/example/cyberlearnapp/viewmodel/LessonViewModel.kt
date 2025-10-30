@@ -1,11 +1,8 @@
 package com.example.cyberlearnapp.viewmodel
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cyberlearnapp.network.ApiService
@@ -27,8 +24,6 @@ class LessonViewModel @Inject constructor(
     private val apiService: ApiService
 ) : ViewModel() {
 
-    /*var uiState by mutableStateOf(LessonUiState())
-        private set*/
     private val _uiState = MutableStateFlow(LessonUiState())
     val uiState: StateFlow<LessonUiState> = _uiState.asStateFlow()
 
@@ -50,7 +45,7 @@ class LessonViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCompleting = true, errorMessage = null)
             try {
-                // ✅ SOLUCIÓN TEMPORAL: Usar el token que sabemos que funciona
+                // TEMPORAL: Usar el token que sabemos que funciona
                 val token = "Bearer token-test@ejemplo.com"
 
                 val response = apiService.completeActivity(
@@ -82,7 +77,7 @@ class LessonViewModel @Inject constructor(
     }
 
     private fun getToken(): String {
-        // Temporal - Persona 4 implementará la persistencia real
+        // Temporal - Se implementará la persistencia real
         return "token-usuario@ejemplo.com"
     }
 }

@@ -13,7 +13,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import com.example.cyberlearnapp.ui.theme.*
 import com.example.cyberlearnapp.viewmodel.LessonViewModel
 
@@ -27,7 +26,6 @@ fun LessonScreen(
     modifier: Modifier = Modifier
 ) {
     val viewModel: LessonViewModel = hiltViewModel()
-    //val uiState by viewModel.uiState.collectAsState()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(lessonId) {
