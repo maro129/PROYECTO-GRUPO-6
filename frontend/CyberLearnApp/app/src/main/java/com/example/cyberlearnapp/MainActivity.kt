@@ -74,10 +74,8 @@ fun CyberLearnApp() {
                 AuthScreen(
                     viewModel = authViewModel,
                     onLoginSuccess = {
-                        val token = authViewModel.currentUser.value?.token ?: ""
-                        if (token.isNotBlank()) {
-                            userViewModel.loadUserProgress(token)
-                        }
+                        userViewModel.loadUserProgress()
+
                         navController.navigate(Screens.Dashboard.route) {
                             popUpTo(Screens.Auth.route) { inclusive = true }
                         }
@@ -112,8 +110,9 @@ fun CyberLearnApp() {
             }
 
             composable(Screens.Profile.route) {
-                ProfileScreen(  // ✅ PANTALLA REAL DE PERFIL
+                ProfileScreen(
                     authViewModel = authViewModel,
+                    userViewModel = userViewModel,
                     onEditProfile = {
                         println("✏️ Editar perfil")
                     },

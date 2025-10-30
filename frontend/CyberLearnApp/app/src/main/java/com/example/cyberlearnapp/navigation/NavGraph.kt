@@ -44,6 +44,7 @@ fun NavGraphBuilder.mainGraph(
         composable(Screens.Profile.route) {
             ProfileScreen(
                 authViewModel = authViewModel,
+                userViewModel = userViewModel,
                 onEditProfile = {
                     println("✏️ Editar perfil")
                 },

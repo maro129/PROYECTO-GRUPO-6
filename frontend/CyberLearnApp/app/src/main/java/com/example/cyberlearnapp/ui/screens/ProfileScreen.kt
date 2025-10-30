@@ -6,26 +6,35 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.cyberlearnapp.ui.theme.*
 import com.example.cyberlearnapp.viewmodel.AuthViewModel
+import com.example.cyberlearnapp.viewmodel.UserViewModel
 import androidx.compose.runtime.collectAsState
 
 @Composable
 fun ProfileScreen(
     authViewModel: AuthViewModel,
+    userViewModel: UserViewModel,
     onEditProfile: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    //val currentUser = authViewModel.currentUser.value
     val currentUser by authViewModel.currentUser.collectAsState()
-    //val currentUser by authViewModel.currentUser.collectAsStateWithLifecycle()
+    val userProgress by userViewModel.userProgress.collectAsState()
+    val userBadges by userViewModel.userBadges.collectAsState()
+    val isLoading by userViewModel.isLoading.collectAsState()
+
+    // CARGAR DATOS AL INICIAR LA PANTALLA
+    LaunchedEffect(Unit) {
+        userViewModel.loadUserProgress()
+        userViewModel.loadUserBadges()
+    }
 
     Box(
         modifier = modifier
@@ -52,6 +61,18 @@ fun ProfileScreen(
                 color = AccentCyan,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
+
+            // Mostrar loading si está cargando
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = AccentCyan)
+                }
+            }
 
             // Tarjeta de información del usuario
             Card(
@@ -109,7 +130,7 @@ fun ProfileScreen(
                                 modifier = Modifier.padding(horizontal = 12.dp)
                             ) {
                                 Text(
-                                    text = "5",
+                                    text = userProgress?.level?.toString() ?: "1",
                                     style = MaterialTheme.typography.headlineMedium,
                                     color = AccentCyan,
                                     fontWeight = FontWeight.Bold
@@ -126,7 +147,7 @@ fun ProfileScreen(
                                 modifier = Modifier.padding(horizontal = 12.dp)
                             ) {
                                 Text(
-                                    text = "1250",
+                                    text = userProgress?.xpTotal?.toString() ?: "0",
                                     style = MaterialTheme.typography.headlineMedium,
                                     color = AccentCyan,
                                     fontWeight = FontWeight.Bold
@@ -143,7 +164,7 @@ fun ProfileScreen(
                                 modifier = Modifier.padding(horizontal = 12.dp)
                             ) {
                                 Text(
-                                    text = "7",
+                                    text = userProgress?.streak?.toString() ?: "0",
                                     style = MaterialTheme.typography.headlineMedium,
                                     color = Warning,
                                     fontWeight = FontWeight.Bold
@@ -166,12 +187,12 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Nivel 5",
+                                text = "Nivel ${userProgress?.level ?: 1}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextWhite
                             )
                             Text(
-                                text = "Nivel 6",
+                                text = "Nivel ${(userProgress?.level ?: 1) + 1}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextGray
                             )
@@ -194,7 +215,7 @@ fun ProfileScreen(
                         }
 
                         Text(
-                            text = "Faltan 750 XP para el nivel 6",
+                            text = "Faltan ${userProgress?.nextLevelXp ?: 100} XP para el nivel ${(userProgress?.level ?: 1) + 1}",
                             style = MaterialTheme.typography.bodySmall,
                             color = TextGray,
                             modifier = Modifier.padding(top = 4.dp)
@@ -238,17 +259,17 @@ fun ProfileScreen(
                     Column {
                         StatItem(
                             label = "Lecciones completadas",
-                            value = "23",
+                            value = userProgress?.lessonsCompleted?.toString() ?: "0",
                             color = AccentCyan
                         )
                         StatItem(
                             label = "Insignias obtenidas",
-                            value = "8 / 15",
+                            value = "${userBadges.size} / 15",
                             color = Success
                         )
                         StatItem(
                             label = "Progreso general",
-                            value = "53%",
+                            value = "${userProgress?.progressPercentage?.toInt() ?: 0}%",
                             color = Warning
                         )
                         StatItem(
@@ -258,7 +279,7 @@ fun ProfileScreen(
                         )
                         StatItem(
                             label = "Cursos completados",
-                            value = "1",
+                            value = userProgress?.coursesCompleted?.toString() ?: "0",
                             color = Success
                         )
                     }
