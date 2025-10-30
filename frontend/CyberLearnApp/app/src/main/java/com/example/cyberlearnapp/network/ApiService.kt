@@ -2,6 +2,9 @@ package com.example.cyberlearnapp.network
 
 import com.example.cyberlearnapp.network.models.Progress
 import com.example.cyberlearnapp.network.models.User
+import com.example.cyberlearnapp.network.models.CompleteActivityRequest
+import com.example.cyberlearnapp.network.models.CompleteActivityResponse
+import com.example.cyberlearnapp.network.models.BadgeResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -17,6 +20,17 @@ interface ApiService {
 
     @GET("api/user/progress")
     suspend fun getUserProgress(@Header("Authorization") token: String): Response<Progress>
+
+    @POST("/api/user/complete-activity")
+    suspend fun completeActivity(
+        @Header("Authorization") token: String,
+        @Body request: CompleteActivityRequest
+    ): Response<CompleteActivityResponse>
+
+    @GET("/api/user/badges")
+    suspend fun getUserBadges(
+        @Header("Authorization") token: String
+    ): Response<BadgeResponse>
 }
 
 

@@ -9,20 +9,37 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.example.cyberlearnapp.repository.UserRepository
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _currentUser = MutableStateFlow<User?>(null)
-    val currentUser: StateFlow<User?> = _currentUser
+    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    init {
+        // Cargar usuario almacenado al iniciar
+        loadStoredUser()
+    }
+
+    fun loadStoredUser() {
+        viewModelScope.launch {
+            userRepository.userInfo.collect { user ->
+                _currentUser.value = user
+            }
+        }
+    }
 
     fun register(email: String, password: String, name: String) {
         _isLoading.value = true
@@ -36,12 +53,18 @@ class AuthViewModel @Inject constructor(
 
                 if (response.isSuccessful && response.body()?.success == true) {
                     val userData = response.body()?.user
+                    val token = response.body()?.token ?: ""
+
                     if (userData != null) {
-                        _currentUser.value = User(
+                        val user = User(
                             email = userData.email,
                             name = userData.name,
-                            token = response.body()?.token ?: ""
+                            token = token
                         )
+
+                        // GUARDAR EN REPOSITORIO (PERSISTENCIA)
+                        userRepository.saveUserInfo(user)
+                        _currentUser.value = user
                     }
                 } else {
                     _errorMessage.value = response.body()?.message ?: "Error en el registro"
@@ -66,12 +89,18 @@ class AuthViewModel @Inject constructor(
 
                 if (response.isSuccessful && response.body()?.success == true) {
                     val userData = response.body()?.user
+                    val token = response.body()?.token ?: ""
+
                     if (userData != null) {
-                        _currentUser.value = User(
+                        val user = User(
                             email = userData.email,
                             name = userData.name,
-                            token = response.body()?.token ?: ""
+                            token = token
                         )
+
+                        // GUARDAR EN REPOSITORIO (PERSISTENCIA)
+                        userRepository.saveUserInfo(user)
+                        _currentUser.value = user
                     }
                 } else {
                     _errorMessage.value = response.body()?.message ?: "Error en el login"
@@ -85,7 +114,11 @@ class AuthViewModel @Inject constructor(
     }
 
     fun logout() {
-        _currentUser.value = null
+        viewModelScope.launch {
+            // LIMPIAR DATOS DEL REPOSITORIO
+            userRepository.clearUserData()
+            _currentUser.value = null
+        }
     }
 
     fun clearError() {
