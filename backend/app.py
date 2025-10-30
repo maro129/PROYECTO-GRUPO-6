@@ -1,7 +1,5 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-#CONEXION CON POSTGRESQL Y CREACION DE ARCHIVOS activity y badge
-
 # 1. Importación necesaria
 from flask_sqlalchemy import SQLAlchemy
 
@@ -45,8 +43,6 @@ class UserBadge(db.Model):
 
     # Evita que un usuario obtenga la misma insignia dos veces
     __table_args__ = (db.UniqueConstraint('user_id', 'badge_id', name='_user_badge_uc'),)
-
-
 from auth_service import AuthService
 from gamification_service import GamificationService
 from course_service import CourseService
